@@ -7,26 +7,24 @@ import { createUser } from "@/lib/actions/user.actions";
 
 export async function POST(req: Request) {
     try {
-        const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET
+        const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
+        
         if (!WEBHOOK_SECRET) {
-            throw new Error(
-                "Webhook missing from .env"
-            );
+            throw new Error("Webhook secret missing from .env");
         }
 
-        // Get headers 
-        const headerPayload = headers();
-        const svix_id = (await headerPayload).get("svix-id");
-        const svix_timestamp = (await headerPayload).get("svix_timestamp");
-        const svix_signature = (await headerPayload).get("svix_signature");
+        // Get headers (no await needed)
+        const headerPayload = await headers();
+        const svix_id = headerPayload.get("svix-id");
+        const svix_timestamp = headerPayload.get("svix-timestamp"); 
+        const svix_signature = headerPayload.get("svix-signature");
 
-        // Throw error if no errors
-        if(!svix_id || !svix_timestamp || !svix_signature) {
-            return new Response(
-                "Error occured, no svix headers", {
-                    status: 400
-                }
-            );
+        // Check for required headers
+        if (!svix_id || !svix_timestamp || !svix_signature) {
+            console.error("Missing svix headers:", { svix_id, svix_timestamp, svix_signature });
+            return new Response("Error occurred, missing svix headers", {
+                status: 400
+            });
         }
 
         // Get body 
@@ -45,8 +43,8 @@ export async function POST(req: Request) {
                 "svix-signature": svix_signature,
             }) as WebhookEvent;
         } catch (error) {  
-            console.error("Error verifying webhook: ", error);
-            return new Response("Error occurred ", {
+            console.error("Error verifying webhook signature:", error);
+            return new Response("Error verifying webhook signature", {
                 status: 400,
             });
         }
@@ -54,9 +52,10 @@ export async function POST(req: Request) {
         const { id } = event.data;
         const eventType = event.type;
 
-        // Create user in mongodb
+        console.log(`Webhook received: ${eventType} for user ${id}`);
 
-        if (eventType == "user.created") { // in clerk dashboard
+        // Create user in mongodb
+        if (eventType === "user.created") {
             const {
                 id,
                 email_addresses,
@@ -66,35 +65,52 @@ export async function POST(req: Request) {
                 username
             } = event.data;
 
+            // Validate required fields
+            if (!email_addresses || email_addresses.length === 0) {
+                console.error("No email addresses found in user data");
+                return new Response("Invalid user data", { status: 400 });
+            }
+
             const user = {
                 clerkId: id,
                 email_address: email_addresses[0].email_address,
-                username: username!,
-                firstName: first_name,
-                lastName: last_name,
-                photo: image_url,
+                username: username || "", // Handle potential null/undefined
+                firstName: first_name || "",
+                lastName: last_name || "",
+                photo: image_url || "",
             };
 
-            console.log("User: ", user);
-            const newUser = await createUser(user);
+            console.log("Creating user:", user);
+            
+            try {
+                const newUser = await createUser(user);
 
-            if(newUser) {
-                await clerkClient.users.updateUserMetadata(id, {
-                    publicMetadata: {
-                        userId: newUser._id
-                    }
+                if (newUser) {
+                    // Update user metadata with MongoDB ID
+                    await clerkClient.users.updateUserMetadata(id, {
+                        publicMetadata: {
+                            userId: newUser._id
+                        }
+                    });
+
+                    console.log("User created successfully:", newUser._id);
+                }
+
+                return NextResponse.json({
+                    message: "New user created", 
+                    user: newUser
                 });
+            } catch (dbError) {
+                console.error("Database error:", dbError);
+                return new Response("Database error", { status: 500 });
             }
-
-            return NextResponse.json({
-                message: "New user created", user: newUser
-            });
         }
 
-        return new Response("", { status: 200 })
+        console.log(`Unhandled event type: ${eventType}`);
+        return new Response("", { status: 200 });
 
     } catch (err) {
-        console.error('Error verifying webhook:', err)
-        return new Response('Error verifying webhook', { status: 400 })
+        console.error('Webhook error:', err);
+        return new Response('Internal server error', { status: 500 });
     }
 }
