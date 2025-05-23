@@ -13,7 +13,7 @@ const DashboardSchema = new Schema({
         required: true,
         unique: true
     },
-    // Theme and Layout Preferences
+    // Simple preferences
     theme: {
         type: String,
         default: 'light',
@@ -24,32 +24,6 @@ const DashboardSchema = new Schema({
         default: 'grid',
         enum: ['grid', 'list', 'masonry']
     },
-    // Widget Configuration
-    widgets: [{
-        id: {
-            type: String,
-            required: true
-        },
-        type: {
-            type: String,
-            required: true,
-            enum: ['stats', 'recent-videos', 'favorites', 'upload', 'analytics', 'calendar', 'activity']
-        },
-        position: {
-            x: { type: Number, default: 0 },
-            y: { type: Number, default: 0 },
-            w: { type: Number, default: 4 },
-            h: { type: Number, default: 3 }
-        },
-        isVisible: {
-            type: Boolean,
-            default: true
-        },
-        configuration: {
-            type: Schema.Types.Mixed,
-            default: {}
-        }
-    }],
     // Video-related Data
     favoriteVideos: [{
         videoId: String,
@@ -77,7 +51,7 @@ const DashboardSchema = new Schema({
         tags: [String],
         thumbnail: String,
         fileSize: Number,
-        duration: Number, // in seconds
+        duration: Number,
         uploadedAt: {
             type: Date,
             default: Date.now
@@ -91,18 +65,8 @@ const DashboardSchema = new Schema({
             default: true
         }
     }],
-    // User Categories and Preferences
-    videoCategories: [{
-        name: String,
-        color: String,
-        createdAt: {
-            type: Date,
-            default: Date.now
-        }
-    }],
-    // Dashboard Statistics
     stats: {
-        totalUploads: {
+        totalVideos: {
             type: Number,
             default: 0
         },
@@ -112,45 +76,16 @@ const DashboardSchema = new Schema({
         },
         totalStorageUsed: {
             type: Number,
-            default: 0 // in bytes
-        },
-        totalWatchTime: {
-            type: Number,
-            default: 0 // in seconds
+            default: 0
         },
         lastActiveAt: {
             type: Date,
             default: Date.now
         }
-    },
-    // Dashboard Settings
-    settings: {
-        autoSaveLayout: {
-            type: Boolean,
-            default: true
-        },
-        showTutorial: {
-            type: Boolean,
-            default: true
-        },
-        emailNotifications: {
-            type: Boolean,
-            default: true
-        },
-        defaultVideoPrivacy: {
-            type: String,
-            default: 'public',
-            enum: ['public', 'private', 'unlisted']
-        }
     }
 }, {
     timestamps: true
 });
-
-// Indexes for better performance
-DashboardSchema.index({ clerkId: 1 });
-DashboardSchema.index({ userId: 1 });
-DashboardSchema.index({ 'uploadedVideos.uploadedAt': -1 });
 
 const Dashboard = models?.Dashboard || model("Dashboard", DashboardSchema);
 
