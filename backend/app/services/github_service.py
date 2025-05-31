@@ -3,7 +3,7 @@ import requests
 from github import Github
 from dotenv import load_dotenv
 from typing import List, Dict, Any
-from app.models.repository import Repository
+from app.models.repository import Repository, FileContent
 
 
 load_dotenv()
@@ -38,3 +38,21 @@ class GithubService:
         print(file_tree)
         return [item for item in file_tree if item['type'] == 'blob']
 
+
+    async def get_file_content(self, owner: str, repo: str, path: str, branch: str) -> FileContent:
+        github_repo = self.github_client.get_repo(f"{owner}/{repo}")
+        file_content = github_repo.get_contents(path, ref=branch)
+        if isinstance(file_content, list):
+            raise ValueError(f"Path {path} is a directory, not a file")
+        return FileContent(
+            path=path,
+            content=file_content.decoded_content.decode('utf-8'),
+            size=file_content.size,
+            type=file_content.type,
+        )
+    
+    async def get_multiple_files(self, owner: str, repo: str, paths: List[str], branch: str) -> List[FileContent]:
+        import asyncio
+        tasks = [self.get_file_content(owner, repo, path, branch) for path in paths]
+        return await asyncio.gather(*tasks)
+    
