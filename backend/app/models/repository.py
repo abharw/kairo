@@ -15,4 +15,10 @@ class Repository(BaseModel):
     clone_url: str
     topics: List[str] = [] 
 
-
+class FileContent(BaseModel):
+    path: str 
+    content: str 
+    size: int 
+    type: str 
+    sha: Optional[str] = None
+    encoding: str = "utf-8"
