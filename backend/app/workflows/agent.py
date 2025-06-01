@@ -1,17 +1,28 @@
 from langchain_community.chat_models import ChatOpenAI
-from langchain.vectorstores import Chroma
 from langchain.agents import AgentType, initialize_agent
 from langchain.embeddings import OpenAIEmbeddings
-from app.workflows.config import Config
+from app.utils.config import Config
 from .tools import ToolFactory
+from langchain_community.vectorstores import Qdrant
+from qdrant_client import QdrantClient
 
-Config.validate()
 
 class CodeAgent:
-    def __init__(self, owner: str, repo: str, branch: str = 'main'):
+    def __init__(self):
+        Config.validate()
         self.llm = ChatOpenAI(model="gpt-4", temperature=0)
         self.embeddings = OpenAIEmbeddings()
-        self.db = Chroma(persist_directory=Config.VECTOR_STORE_PATH, embedding_function=self.embeddings)
+        self.qdrant_client = QdrantClient(
+            url=Config.QDRANT_URL,
+            api_key=Config.QDRANT_API_KEY
+        )
+
+        self.db = Qdrant(
+            client=self.qdrant_client,
+            collection_name=Config.QDRANT_COLLECTION_NAME,  # type: ignore
+            embeddings=self.embeddings
+        )
+
         self.retriever = self.db.as_retriever()
         self.tools = ToolFactory(self.llm, self.retriever)
         self.agent = self.initialize()
