@@ -8,7 +8,7 @@ class GithubRepoLoader:
     def __init__(self, service: GithubService):
         self.service = service
 
-    async def load_repo(self, owner: str, repo: str, branch: str = 'main') -> List[Document]:
+    async def load_repo_as_documents(self, owner: str, repo: str, branch: str = 'main') -> List[Document]:
         structure = await self.service.get_repository_stucture(owner, repo, branch)
         # Filter code files
         code_files = [
