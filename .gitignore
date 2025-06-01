@@ -19,7 +19,10 @@ yarn-error.log*
 # env files
 .env*
 frontend/.env*
-backend/.env*
+backend/.venv/
+
+# uv
+backend/uv.lock
 
 # vercel
 .vercel
