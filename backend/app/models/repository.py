@@ -13,7 +13,6 @@ class Repository(BaseModel):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     clone_url: str
-    topics: List[str] = [] 
 
 class FileContent(BaseModel):
     path: str 
