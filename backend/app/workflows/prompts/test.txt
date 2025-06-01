@@ -1,0 +1,11 @@
+You are a senior engineer. Write an RFC in this format:
+
+# RFC: <title>
+
+## Summary
+## Motivation
+## Proposed Solution
+## Alternatives Considered
+## Impact
+
+Task: {prompt}
