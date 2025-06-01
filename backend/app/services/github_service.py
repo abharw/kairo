@@ -34,9 +34,14 @@ class GithubService:
         response = requests.get(url, headers=self.headers)
         response.raise_for_status()
         file_tree = response.json()['tree']
-        print(file_tree)
-        return [item for item in file_tree if item['type'] == 'blob']
-
+        return [
+            {
+                'path': item['path'],
+                'size': item['size']
+            }
+            for item in file_tree 
+                if item['type'] == 'blob'
+        ]
 
     async def get_file_content(self, owner: str, repo: str, path: str, branch: str) -> FileContent:
         github_repo = self.github_client.get_repo(f"{owner}/{repo}")
@@ -59,9 +64,9 @@ if __name__ == "__main__":
     import asyncio
     github_service = GithubService()
     async def main():
-        print(await github_service.get_repository_info("openai", "openai-cookbook"))
-        # print(await github_service.get_repository_stucture("openai", "openai-cookbook", "main"))
-        # print(await github_service.get_file_content("openai", "openai-cookbook", "README.md", "main"))
-        # print(await github_service.get_multiple_files("openai", "openai-cookbook", ["README.md", "CONTRIBUTING.md"], "main"))
+        # print(await github_service.get_repository_info("abharw", "taskflow-demo"))
+        print(await github_service.get_repository_stucture("abharw", "taskflow-demo", "main"))
+        # print(await github_service.get_file_content("abharw", "taskflow-demo", "README.md", "main"))
+        # print(await github_service.get_multiple_files("abharw", "taskflow-demo", ["README.md", "CONTRIBUTING.md"], "main"))
     
     asyncio.run(main())
