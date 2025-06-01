@@ -5,7 +5,6 @@ from dotenv import load_dotenv
 from typing import List, Dict, Any
 from app.models.repository import Repository, FileContent
 
-
 load_dotenv()
 
 class GithubService:
@@ -56,3 +55,13 @@ class GithubService:
         tasks = [self.get_file_content(owner, repo, path, branch) for path in paths]
         return await asyncio.gather(*tasks)
     
+if __name__ == "__main__":
+    import asyncio
+    github_service = GithubService()
+    async def main():
+        print(await github_service.get_repository_info("openai", "openai-cookbook"))
+        # print(await github_service.get_repository_stucture("openai", "openai-cookbook", "main"))
+        # print(await github_service.get_file_content("openai", "openai-cookbook", "README.md", "main"))
+        # print(await github_service.get_multiple_files("openai", "openai-cookbook", ["README.md", "CONTRIBUTING.md"], "main"))
+    
+    asyncio.run(main())
